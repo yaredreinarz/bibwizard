@@ -162,7 +162,7 @@ def load_settings() -> Settings:
         literature_dir=literature_dir,
         sqlite_path=db_dir / "bibwizard.sqlite",
         ollama_host=_env_str("OLLAMA_HOST", "http://localhost:11434").rstrip("/"),
-        ollama_llm_model=_env_str("OLLAMA_LLM_MODEL", "deepseek-r1:8b"),
+        ollama_llm_model=_env_str("OLLAMA_LLM_MODEL", "qwen2.5:7b-instruct-q4_K_M"),
         ollama_embed_model=_env_str("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
         ollama_timeout=_env_int("OLLAMA_TIMEOUT", 120),
         chunk_size=_env_int("CHUNK_SIZE", 512),
