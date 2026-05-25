@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Environment
+.env
+.env.local
+
+# Local bibwizard data (when run from repo)
+.bibwizard/
+~/.bibwizard/
+*.sqlite
+*.db
+chroma/
+
+# Logs
+*.log
+
+# User research library — PDFs of published papers, not redistributable
+# and individually large. Keep these out of the repo.
+literature/
+papers/
+backroom/
+
+# HuggingFace / sentence-transformers model cache (created by the
+# cross-encoder reranker on first use; tens of MB to ~1 GB).
+.cache/
+hf_cache/
+
+# OS junk
+Thumbs.db
