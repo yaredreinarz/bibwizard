@@ -70,11 +70,22 @@ _COUNT_VERBS = re.compile(
     re.IGNORECASE,
 )
 _SUMMARY_VERBS = re.compile(
-    r"\b(summari[sz]e\s+(my|the)\s+(library|database|papers)|"
-    r"overview\s+of\s+(the|my)\s+(library|field|database|papers)|"
+    # Verb-style phrasings: "summarise my library", "give me a summary of..."
+    r"\b(summari[sz]e\s+(my|the|your)\s+(library|database|papers|collection)|"
+    r"overview\s+of\s+(the|my|your)\s+(library|field|database|papers|collection)|"
+    # Noun-style phrasings: "a summary/resume/overview/recap/rundown of..."
+    r"(give|show|list|tell)\s+(me\s+)?(a\s+|an\s+)?"
+    r"(summary|resume|recap|rundown|overview|synopsis)\s+(of|on)\s+"
+    r"(the|my|your)?\s*"
+    r"(library|database|papers|collection|topics|fields|areas|themes|content)|"
+    # Question-style: "what topics/fields/areas are in...", "what do I have"
     r"what\s+(do|did)\s+(i|you)\s+have|"
-    r"what.?s\s+in\s+(my|the)\s+(library|database)|"
-    r"what\s+(topics|fields|areas|themes))\b",
+    r"what.?s\s+in\s+(my|the|your)\s+(library|database|collection)|"
+    r"what\s+(topics|fields|areas|themes|papers)|"
+    # "topics in the library" / "themes covered by my collection"
+    r"(topics|fields|areas|themes|content)\s+"
+    r"(in|of|covered\s+by|across)\s+"
+    r"(the|my|your)\s+(library|database|collection))\b",
     re.IGNORECASE,
 )
 _SPECIFIC_PAPER_VERBS = re.compile(

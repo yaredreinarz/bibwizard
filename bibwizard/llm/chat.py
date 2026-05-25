@@ -22,6 +22,7 @@ from bibwizard.database.models import Paper
 from bibwizard.ingestion.embedder import query_chunks
 from bibwizard.utils.config import settings
 from bibwizard.utils.display import console, error, info, panel
+from bibwizard.utils.wizard_spinner import WizardLive
 
 from . import router
 from . import tools as chat_tools
@@ -405,23 +406,26 @@ class _ThinkingFilter:
         return "".join(out)
 
 
-def _stream_messages_to_panel(messages: list[ChatMessage]) -> str:
-    """Stream a chat completion into the bibwizard panel. Returns full text."""
+def _stream_messages_to_panel(
+    messages: list[ChatMessage],
+    *,
+    status: str = "Reading the library and writing the answer...",
+) -> str:
+    """Run a chat completion silently behind the wizard animation, then
+    return the full filtered text. Replaces the older streaming-panel
+    behaviour (tokens appearing one at a time) with the same wait-then-
+    reveal UX cite_finder uses — the wizard walks back and forth while
+    the LLM grinds, then the answer drops cleanly at the end as the
+    chat loop renders the Markdown.
+    """
     client = get_client()
     filt = _ThinkingFilter()
     pieces: list[str] = []
-    text = Text()
-    with Live(
-        Panel(text, title="bibwizard", border_style="cyan"),
-        refresh_per_second=20,
-        console=console,
-    ) as live:
+    with WizardLive(console, status=status) as wiz:
         for token in client.chat(messages, stream=True):
             visible = filt.feed(token)
             if visible:
                 pieces.append(visible)
-                text.append(visible)
-                live.update(Panel(text, title="bibwizard", border_style="cyan"))
     return "".join(pieces).strip()
 
 
@@ -560,7 +564,10 @@ def _handle_specific_paper(
     for turn in history:
         messages.append(ChatMessage(turn.role, turn.content))
     messages.append(ChatMessage("user", user_payload))
-    return _stream_messages_to_panel(messages)
+    return _stream_messages_to_panel(
+        messages,
+        status=f"Reading paper {pid} and writing the answer...",
+    )
 
 
 def _handle_library_summary(
@@ -602,7 +609,10 @@ def _handle_library_summary(
     for turn in history:
         messages.append(ChatMessage(turn.role, turn.content))
     messages.append(ChatMessage("user", user_payload))
-    return _stream_messages_to_panel(messages)
+    return _stream_messages_to_panel(
+        messages,
+        status="Summarising your library...",
+    )
 
 
 def _format_history_for_router(history: list[ChatTurn], max_turns: int = 6) -> str:
@@ -864,7 +874,10 @@ def _handle_rag(
         )
         panel("Sources used", src_lines, style="dim")
 
-    return _stream_messages_to_panel(messages)
+    return _stream_messages_to_panel(
+        messages,
+        status="Reading the library and writing the answer...",
+    )
 
 
 def stream_answer(

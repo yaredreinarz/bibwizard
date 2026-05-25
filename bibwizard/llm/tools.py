@@ -270,9 +270,11 @@ def _t_cite_finder(args: dict) -> str:
 
     reranker = get_reranker()
 
-    # Animated wizard reads through the shelves while the LLM grinds.
-    # Transient — clears when find_citations returns so the results
-    # panel is the first persistent output the user sees.
+    # Animated wizard walks back and forth between desk and shelf while
+    # the LLM grinds. Transient — clears when find_citations returns so
+    # the results panel is the first persistent output the user sees.
+    # Sparkles appear at moments where the wizard "finds something"
+    # (after grabbing a book at the shelf, and mid-reading at the desk).
     with WizardLive(
         console,
         status=f"Preparing search (reranker={reranker.name})...",

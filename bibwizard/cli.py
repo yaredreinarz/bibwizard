@@ -2329,9 +2329,13 @@ def cite_cmd(
     def _debug(row: dict) -> None:
         debug_rows.append(row)
 
-    # Animated ASCII wizard reads through the library while the LLM grinds.
-    # Transient — auto-clears so the results table is the first persistent
-    # output once find_citations returns.
+    # Animated ASCII wizard walks back and forth between desk and shelf
+    # while the LLM grinds. Transient — auto-clears so the results table
+    # is the first persistent output once find_citations returns. The
+    # walking scene now also surfaces sparkles at key moments (when the
+    # wizard picks a book, and again at the midpoint of his reading
+    # phase) — the "aha!" beats from the reading scene applied to the
+    # full narrative cycle.
     with WizardLive(
         console,
         status=f"Preparing search (reranker={reranker.name})...",

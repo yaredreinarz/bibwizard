@@ -119,6 +119,13 @@ class Settings:
     # dominates a 20-chunk pool.
     reranker_max_per_paper: int = 3
 
+    # Which wizard animation to show during long-running operations:
+    #   "walking" — ASCII wizard walks between desk and shelf (green)
+    #   "reading" — ASCII wizard parked at desk reading a book (green)
+    #   "pixel"   — higher-resolution colored pixel-art wizard
+    # Override via WIZARD_SCENE env var.
+    wizard_scene: str = "walking"
+
     # Misc derived
     chroma_collection: str = "bibwizard"
     user_agent: str = field(default="bibwizard/0.1 (+https://github.com/yaredreinarz/bibwizard)")
@@ -181,6 +188,7 @@ def load_settings() -> Settings:
         reranker_model=_env_str("RERANKER_MODEL", "BAAI/bge-reranker-base"),
         reranker_overscan=_env_int("RERANKER_OVERSCAN", 5),
         reranker_max_per_paper=_env_int("RERANKER_MAX_PER_PAPER", 3),
+        wizard_scene=_env_str("WIZARD_SCENE", "walking"),
     )
 
 
