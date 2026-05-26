@@ -264,7 +264,7 @@ def _t_cite_finder(args: dict) -> str:
         panel("Cite finder", msg, style="yellow")
         return msg
     max_results = _coerce_int(args.get("max_results"), 5)
-    pool = _coerce_int(args.get("pool_size"), 20)
+    pool = _coerce_int(args.get("pool_size"), 10)
     want_tex = bool(args.get("tex"))
     cite_command = (args.get("cite_command") or "citep").strip().lower()
 
@@ -334,12 +334,22 @@ def _t_cite_finder(args: dict) -> str:
     table.add_column("Quoted passage", overflow="fold")
     table.add_column("Why", overflow="fold")
     for h in hits:
+        # Dim "candidate N/M" footer beneath each quote so the user can
+        # see where each accepted match landed in the reranked pool —
+        # useful for tuning pool_size in subsequent calls.
+        if h.pool_size:
+            quoted_cell = (
+                f"“{h.quoted_sentence}”\n"
+                f"[dim]candidate {h.pool_rank}/{h.pool_size}[/dim]"
+            )
+        else:
+            quoted_cell = f"“{h.quoted_sentence}”"
         table.add_row(
             f"{h.confidence:.2f}",
             str(h.paper_id),
             h.paper_cite,
             str(h.page) if h.page > 0 else "?",
-            f"“{h.quoted_sentence}”",
+            quoted_cell,
             h.rationale,
         )
     console.print(table)

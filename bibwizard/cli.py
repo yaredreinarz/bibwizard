@@ -2246,10 +2246,12 @@ def cite_cmd(
     claim: str = typer.Argument(..., help="The exact statement to find a citation for."),
     max_results: int = typer.Option(5, "--max", "-n", help="Max papers to return."),
     pool_size: int = typer.Option(
-        20,
+        10,
         "--pool",
-        help="Candidate chunks to check via LLM entailment. Higher = more "
-        "thorough, slower. Each chunk = one LLM call.",
+        help="Candidate chunks to check via LLM entailment. Default 10 — "
+        "accepted hits almost always come from the top 5-10 reranked "
+        "candidates. Raise (20-40) for niche claims; lower = faster. "
+        "Each chunk = one LLM call.",
     ),
     min_confidence: float = typer.Option(
         0.5,
@@ -2473,12 +2475,24 @@ def cite_cmd(
     table.add_column("Quoted passage", overflow="fold")
     table.add_column("Why", overflow="fold")
     for h in hits:
+        # Append a dim "candidate N/M" footer under the quoted passage so
+        # the user can see where in the reranked pool each match landed.
+        # When matches cluster near rank 1-3 of a pool of 20, pool size
+        # can safely be shrunk; matches from rank 15+ argue for keeping
+        # the pool wide.
+        if h.pool_size:
+            quoted_cell = (
+                f"“{h.quoted_sentence}”\n"
+                f"[dim]candidate {h.pool_rank}/{h.pool_size}[/dim]"
+            )
+        else:
+            quoted_cell = f"“{h.quoted_sentence}”"
         table.add_row(
             f"{h.confidence:.2f}",
             str(h.paper_id),
             h.paper_cite,
             str(h.page) if h.page > 0 else "?",
-            f"“{h.quoted_sentence}”",
+            quoted_cell,
             h.rationale,
         )
     console.print(table)

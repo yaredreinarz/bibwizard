@@ -47,6 +47,12 @@ class CitationHit:
     confidence: float
     rationale: str
     chunk_score: float       # original ChromaDB similarity score
+    # 1-indexed position of this chunk in the post-rerank entailment pool,
+    # and the size of that pool. Surfaced in the output so the user can
+    # see whether matches cluster near the top (small pool sufficient) or
+    # come from deep in the pool (need to keep pool_size large).
+    pool_rank: int = 0
+    pool_size: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -58,6 +64,8 @@ class CitationHit:
             "confidence": self.confidence,
             "rationale": self.rationale,
             "chunk_score": self.chunk_score,
+            "pool_rank": self.pool_rank,
+            "pool_size": self.pool_size,
         }
 
 
@@ -395,7 +403,7 @@ def _entail(
 def find_citations(
     claim: str,
     *,
-    pool_size: int = 20,
+    pool_size: int = 10,
     max_results: int = 5,
     min_confidence: float = 0.5,
     progress_cb: Callable[[int, int], None] | None = None,
@@ -408,9 +416,12 @@ def find_citations(
     Args:
       claim: the statement you want a citation for.
       pool_size: how many candidate chunks to retrieve from ChromaDB.
-        20 is a good default — large enough to cover the top few papers
-        in detail, small enough to keep entailment latency to ~30-60s on
-        qwen2.5:7b.
+        10 is a good default — empirically, accepted hits almost always
+        come from the top 5-10 reranked candidates, so a bigger pool
+        just costs LLM calls without improving recall. The reranker still
+        pulls reranker_overscan × pool_size = 50 from Chroma, so the
+        pool stays well-stocked. For unusually niche claims where the
+        reranker may rank the answer lower, raise with --pool 20 or 40.
       max_results: how many distinct papers to return.
       min_confidence: drop hits below this LLM-reported confidence.
       progress_cb: optional callback `(done, total)` for showing progress
@@ -632,6 +643,8 @@ def find_citations(
             confidence=confidence,
             rationale=rationale,
             chunk_score=float(ch.get("score", 0.0)),
+            pool_rank=i,
+            pool_size=total,
         )
         _emit_debug(
             i=i, ch=ch, pid=pid, page=page, passage=passage,

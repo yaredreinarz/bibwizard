@@ -654,12 +654,24 @@ _EXPLICIT_CITE_PATTERNS = [
         r"""^\s*(?:bibwizard\s+)?cite(?:_finder)?\s*:\s*(.+)$""",
         re.IGNORECASE | re.DOTALL,
     ),
-    # find (a/the) (cite|citation|reference) (for|to support|that supports|justifying|to justify|that justifies) <claim>
+    # find (a/the) (cite|citation|reference|source|paper|article|study|work)
+    #   (for|to support|supporting|that supports|justifying|to justify|
+    #    that justifies|backing) [:,—] <claim>
+    #
+    # The trailing connector accepts an optional colon/comma/dash so
+    # phrasings like "find a citation to support: <claim>" and
+    # "find a source for, <claim>" still route to cite_finder instead of
+    # falling through to RAG. Also accept the active forms "supporting"
+    # and "justifying" alongside the existing "that supports" / "to support".
+    # The noun list also includes "paper/article/study/work" because users
+    # naturally ask "find a paper supporting X" rather than only "citation".
     re.compile(
         r"""^\s*(?:find|give|get|i\s+need)\s+(?:me\s+)?(?:a|an|the)?\s*"""
-        r"""(?:cite|citation|reference|source)s?\s+"""
-        r"""(?:for|to\s+support|that\s+supports?|justifying|to\s+justify|"""
-        r"""that\s+justif(?:ies|y)|backing|backing\s+up)\s+(.+)$""",
+        r"""(?:cite|citation|reference|source|paper|article|study|work)s?\s+"""
+        r"""(?:for|to\s+support|supporting|that\s+supports?|"""
+        r"""justifying|to\s+justify|that\s+justif(?:ies|y)|"""
+        r"""backing(?:\s+up)?)"""
+        r"""\s*[:,\-–—]?\s*(.+)$""",
         re.IGNORECASE | re.DOTALL,
     ),
     # "who showed that <claim>" / "who demonstrated that <claim>"
@@ -687,6 +699,27 @@ _CLI_FLAG_TAIL_RE = re.compile(
 _CHAT_TEX_FLAG_RE = re.compile(r"(?:^|\s)--tex\b", re.IGNORECASE)
 _CHAT_CITE_COMMAND_RE = re.compile(
     r"--cite-command[=\s]+([A-Za-z]+)", re.IGNORECASE
+)
+
+# Hedge prefix stripper for captured cite claims. When a user writes
+# "find a citation for the claim X" or "find a paper supports this claim X",
+# the regex captures "the claim X" / "this claim X" — we want just "X".
+#
+# Anchored at the start of the captured text. Requires:
+#   (a) an article (this/the/that/a/an/my) — distinguishes "the claim X"
+#       (hedge) from "claim verification" (legitimate claim that happens
+#       to start with the word).
+#   (b) a hedge noun (claim, statement, assertion, fact, finding, ...).
+#   (c) a connector — either "that" + space, punctuation [:,], or
+#       whitespace followed by a quote character. This prevents mangling
+#       claims like "the claim verification approach" where the user
+#       actually means those words.
+_CLAIM_HEDGE_RE = re.compile(
+    r"""^\s*(?:this|the|that|a|an|my)\s+"""
+    r"""(?:claim|statement|assertion|fact|finding|argument|"""
+    r"""hypothesis|proposition|idea)"""
+    r"""(?:\s+that\s+|\s*[:,]\s*|\s+(?=["'“‘]))""",
+    re.IGNORECASE,
 )
 
 
@@ -732,6 +765,12 @@ def _explicit_cite_claim(question: str) -> str | None:
         m = pat.match(q)
         if m:
             claim = (m.group(1) or "").strip().strip(" \"'“”‘’")
+            # Strip leading hedge phrases ("the claim that ...", "this
+            # claim X", "the statement: X", etc.) so what we send to
+            # cite_finder is the actual claim text, not the meta-language
+            # the user wrapped around it. Then strip outer quotes again —
+            # the hedge often sat outside the quotes ("for the claim 'X'").
+            claim = _CLAIM_HEDGE_RE.sub("", claim).strip().strip(" \"'“”‘’")
             # Trim trailing question marks so "who showed X?" gives us "X".
             claim = claim.rstrip("?").strip()
             if len(claim) >= 8:  # avoid matching trivially short tokens

@@ -120,8 +120,11 @@ Useful flags:
 - `--max N` — limit results to top N papers.
 - `--debug` — print the per-candidate entailment verdict (useful when
   something unexpected shows up).
-- `--pool N` — widen the candidate pool (default 20; raise to 40 for
-  harder paraphrases).
+- `--pool N` — change the candidate pool size (default 10; accepted
+  hits empirically almost always come from the top 5-10 reranked
+  candidates, so 10 covers nearly all cases. Raise to 20 or 40 for
+  niche claims, or when `--debug` shows the right passage was ranked
+  outside the pool).
 
 The same syntax works inside `bibwizard chat`:
 
